@@ -86,15 +86,15 @@ python main.py
       "post_url": "https://www.youtube.com/post/...",
       "timestamp": "2 days ago",
       "content": "Check out these photos!",
-      "images": [
-        "https://i.ytimg.com/vi/...",
-        "https://i.ytimg.com/vi/..."
-      ],
       "links": [
         {
           "text": "New Video",
           "url": "https://www.youtube.com/watch?v=example"
         }
+      ],
+      "images": [
+        "https://i.ytimg.com/vi/...",
+        "https://i.ytimg.com/vi/..."
       ],
       "like_count": "411",
       "comment_count": "50"
@@ -103,10 +103,10 @@ python main.py
       "post_url": "https://www.youtube.com/post/...",
       "timestamp": "3 days ago",
       "content": null,
+      "links": [],
       "images": [
         "https://i.ytimg.com/vi/..."
       ],
-      "links": [],
       "like_count": "523",
       "comment_count": "32"
     }
@@ -118,6 +118,7 @@ python main.py
 
 ```
 beautifulsoup4>=4.12.0
+blinker==1.7.0
 selenium-wire>=5.1.0
 selenium>=4.10.0
 packaging>=23.0
