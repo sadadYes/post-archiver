@@ -6,6 +6,7 @@ A Python tool that automatically scrapes posts and links from YouTube channel co
 
 - Automated scraping of YouTube community posts
 - Link extraction and URL expansion
+- Image extraction from posts (single and multiple images)
 - Proxy support for anonymous scraping
 - Headless browser operation
 - Infinite scroll handling
@@ -76,13 +77,19 @@ python main.py
 ```json
 {
   "channel": "channel_name",
+  "channel_icon": "https://yt3.googleusercontent.com/...",
   "scrape_date": "2024-03-21T15:30:45.123456",
+  "scrape_timestamp": 1711033845,
   "posts_count": 42,
   "posts": [
     {
       "post_url": "https://www.youtube.com/post/...",
       "timestamp": "2 days ago",
-      "content": "Check out my new video!",
+      "content": "Check out these photos!",
+      "images": [
+        "https://i.ytimg.com/vi/...",
+        "https://i.ytimg.com/vi/..."
+      ],
       "links": [
         {
           "text": "New Video",
@@ -91,6 +98,17 @@ python main.py
       ],
       "like_count": "411",
       "comment_count": "50"
+    },
+    {
+      "post_url": "https://www.youtube.com/post/...",
+      "timestamp": "3 days ago",
+      "content": null,
+      "images": [
+        "https://i.ytimg.com/vi/..."
+      ],
+      "links": [],
+      "like_count": "523",
+      "comment_count": "32"
     }
   ]
 }
@@ -151,9 +169,9 @@ For issues and feature requests, please use the GitHub issue tracker.
 
 ### Planned Features
 - [ ] Media Handling
-  - [ ] Extract posts containing only images
+  - [x] Extract posts containing only images
   - [ ] Download/store post images
-  - [ ] Handle posts with mixed content (text + images)
+  - [x] Handle posts with mixed content (text + images)
 
 - [x] Post Metadata
   - [x] Extract post date and time
