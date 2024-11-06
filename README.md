@@ -11,6 +11,8 @@ A Python tool that automatically scrapes posts and links from YouTube channel co
 - Infinite scroll handling
 - Duplicate post detection
 - Automatic cleanup and error handling
+- Post metadata extraction (timestamp, likes, comments)
+- Structured JSON export with channel and post data
 
 ## 📋 Prerequisites
 
@@ -71,13 +73,27 @@ python main.py
 
 ## 📤 Output Example
 
-```
-Post content:
-Check out my new video: https://www.youtube.com/watch?v=example
-
-Links found:
-- New Video: https://www.youtube.com/watch?v=example
---------------------------------------------------
+```json
+{
+  "channel": "channel_name",
+  "scrape_date": "2024-03-21T15:30:45.123456",
+  "posts_count": 42,
+  "posts": [
+    {
+      "post_url": "https://www.youtube.com/post/...",
+      "timestamp": "2 days ago",
+      "content": "Check out my new video!",
+      "links": [
+        {
+          "text": "New Video",
+          "url": "https://www.youtube.com/watch?v=example"
+        }
+      ],
+      "like_count": "411",
+      "comment_count": "50"
+    }
+  ]
+}
 ```
 
 ## 📦 Dependencies
@@ -139,22 +155,23 @@ For issues and feature requests, please use the GitHub issue tracker.
   - [ ] Download/store post images
   - [ ] Handle posts with mixed content (text + images)
 
-- [ ] Post Metadata
-  - [ ] Extract post date and time
-  - [ ] Get like count
-  - [ ] Get comment count
+- [x] Post Metadata
+  - [x] Extract post date and time
+  - [x] Get like count
+  - [x] Get comment count
 
 - [ ] Comments
   - [ ] Scrape all comments for each post
   - [ ] Handle nested replies
   - [ ] Extract comment metadata (likes, date, etc.)
 
-- [ ] Data Export
-  - [ ] Export data to JSON format
-  - [ ] Structured output with post content, media, and metadata
+- [x] Data Export
+  - [x] Export data to JSON format
+  - [x] Structured output with post content, media, and metadata
 
 ### Future Considerations
 - [ ] Rate limiting and throttling
 - [ ] Resume capability for interrupted scraping
 - [ ] Better error recovery
 - [ ] Progress tracking and logging
+
