@@ -102,7 +102,7 @@ python main.py
     {
       "post_url": "https://www.youtube.com/post/...",
       "timestamp": "3 days ago",
-      "content": null,
+      "content": "",
       "links": [],
       "images": [
         "https://i.ytimg.com/vi/..."
