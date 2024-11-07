@@ -140,6 +140,7 @@ python main.py
 
 ```
 beautifulsoup4>=4.12.0
+blinker==1.7.0
 selenium-wire>=5.1.0
 selenium>=4.10.0
 packaging>=23.0
