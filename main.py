@@ -116,11 +116,14 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                 name_elem = thread.select_one('div > div > div > h3 > a > span')
                 comment_data['commenter_name'] = name_elem.get_text().strip() if name_elem else ''
                 
+                timestamp_elem = thread.select_one('div > div > div > div > span > a')
+                comment_data['timestamp'] = timestamp_elem.get_text().strip() if timestamp_elem else ''
+
                 content_elem = thread.select_one('div > div > ytd-expander > div > yt-attributed-string')
                 comment_data['content'] = content_elem.get_text().strip() if content_elem else ''
                 
                 like_elem = thread.select_one('div > div > ytd-comment-engagement-bar > div > span')
-                comment_data['like_count'] = like_elem.get_text().strip() if like_elem else '0'
+                comment_data['like_count'] = like_elem.get_text().strip() if like_elem else ''
                 
                 comments.append(comment_data)
             
