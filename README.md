@@ -1,13 +1,16 @@
 # YouTube Community Posts Scraper
 
-A Python tool that automatically scrapes posts and links from YouTube channel community tabs using Selenium and BeautifulSoup4.
+A Python tool that automatically scrapes posts, comments, and links from YouTube channel community tabs using Selenium and BeautifulSoup4.
 
 ## 🚀 Features
 
 - Automated scraping of YouTube community posts
 - Link extraction and URL expansion
 - Image extraction from posts (single and multiple images)
-- Proxy support for anonymous scraping
+- Comment scraping for each post
+- Proxy support with rotation system
+- Support for both single proxy and multiple proxies
+- Progress saving and recovery
 - Headless browser operation
 - Infinite scroll handling
 - Duplicate post detection
@@ -57,9 +60,27 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-5. **Configure proxy in main.py**
+5. **Configure proxy**
+
+You can use either a single proxy or multiple proxies:
+
+For a single proxy, modify `main.py`:
 ```python
+# Single proxy setup
 proxy_str = "username:password@host:port"
+proxy_manager = ProxyManager(single_proxy=proxy_str)
+```
+
+For multiple proxies, create `proxies.txt`:
+```text
+username:password@host1:port1
+username:password@host2:port2
+username:password@host3:port3
+```
+Then in `main.py`:
+```python
+# Multiple proxies setup
+proxy_manager = ProxyManager(proxy_file='proxies.txt')
 ```
 
 6. **Set target YouTube channel**
@@ -84,31 +105,32 @@ python main.py
   "posts": [
     {
       "post_url": "https://www.youtube.com/post/...",
-      "timestamp": "2 days ago",
-      "content": "Check out these photos!",
-      "links": [
+      "timestamp": "8 days ago",
+      "content": "New Video.",
+      "links": [],
+      "images": [],
+      "like_count": "427",
+      "comment_count": "1",
+      "comments": [
         {
-          "text": "New Video",
-          "url": "https://www.youtube.com/watch?v=example"
+          "commenter_icon": "https://yt3.ggpht.com/...",
+          "commenter_name": "@user",
+          "content": "Great video!!",
+          "like_count": "3"
         }
-      ],
-      "images": [
-        "https://i.ytimg.com/vi/...",
-        "https://i.ytimg.com/vi/..."
-      ],
-      "like_count": "411",
-      "comment_count": "50"
+      ]
     },
     {
       "post_url": "https://www.youtube.com/post/...",
-      "timestamp": "3 days ago",
+      "timestamp": "10 days ago",
       "content": "",
       "links": [],
       "images": [
-        "https://i.ytimg.com/vi/..."
+        "https://yt3.ggpht.com/...."
       ],
       "like_count": "523",
-      "comment_count": "32"
+      "comment_count": "32",
+      "comments": []
     }
   ]
 }
@@ -118,7 +140,6 @@ python main.py
 
 ```
 beautifulsoup4>=4.12.0
-blinker==1.7.0
 selenium-wire>=5.1.0
 selenium>=4.10.0
 packaging>=23.0
@@ -128,13 +149,21 @@ setuptools>=67.0.0
 ## 🔧 Advanced Configuration
 
 ### Proxy Setup
-The script uses Selenium-Wire for proxy support. Configure your proxy in `main.py`:
+The script supports two proxy modes:
+
+1. Single Proxy Mode:
 ```python
 proxy_str = "username:password@host:port"
+proxy_manager = ProxyManager(single_proxy=proxy_str)
+```
+
+2. Multiple Proxies Mode:
+```python
+proxy_manager = ProxyManager(proxy_file='proxies.txt')
 ```
 
 ### Browser Options
-Default configuration uses headless Firefox. Modify options in `main.py`:
+Default configuration uses headless Firefox. Modify options in `create_driver()`:
 ```python
 firefox_options = Options()
 firefox_options.add_argument('--headless')  # Remove for visible browser
@@ -146,7 +175,10 @@ The script includes:
 - Automatic browser cleanup
 - Page load wait conditions
 - Proxy authentication handling
+- Proxy rotation on failure
 - Duplicate content detection
+- Progress saving every 5 posts
+- Retry logic for failed requests
 
 ## 📝 License
 
@@ -158,7 +190,11 @@ This tool is for educational purposes only. Users are responsible for complying 
 
 ## 🐛 Troubleshooting
 
-- **Proxy Issues**: Verify proxy credentials and connection
+- **Proxy Issues**: 
+  - Verify proxy credentials
+  - Check proxy connection
+  - Try different proxies
+  - Ensure proper proxy format (username:password@host:port)
 - **Selenium Errors**: Ensure Geckodriver is in PATH
 - **No Posts Found**: Check channel URL and wait conditions
 
@@ -180,17 +216,11 @@ For issues and feature requests, please use the GitHub issue tracker.
   - [x] Get comment count
 
 - [ ] Comments
-  - [ ] Scrape all comments for each post
+  - [x] Scrape all comments for each post
   - [ ] Handle nested replies
-  - [ ] Extract comment metadata (likes, date, etc.)
+  - [x] Extract comment metadata
 
 - [x] Data Export
   - [x] Export data to JSON format
   - [x] Structured output with post content, media, and metadata
-
-### Future Considerations
-- [ ] Rate limiting and throttling
-- [ ] Resume capability for interrupted scraping
-- [ ] Better error recovery
-- [ ] Progress tracking and logging
-
+  - [x] Progress saving and recovery
