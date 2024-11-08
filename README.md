@@ -1,213 +1,81 @@
-# YouTube Community Posts Scraper
+# YouTube Community Post Scraper
 
-A Python tool that automatically scrapes posts, comments, and links from YouTube channel community tabs using Selenium and BeautifulSoup4.
+A Python tool to scrape posts from YouTube community tabs.
 
-## 🚀 Features
+## Dependencies
 
-- Automated scraping of YouTube community posts
-- Link extraction and URL expansion
-- Image extraction from posts (single and multiple images)
-- Comment scraping for each post
-- Proxy support with rotation system
-- Support for both single proxy and multiple proxies
-- Progress saving and recovery
-- Headless browser operation
-- Infinite scroll handling
-- Duplicate post detection
-- Automatic cleanup and error handling
-- Post metadata extraction (timestamp, likes, comments)
-- Structured JSON export with channel and post data
+* Firefox browser needs to be installed
+* GeckoDriver needs to be installed and in your PATH
+* Python 3.7 or higher
 
-## 📋 Prerequisites
+## Features
 
-- Python 3.7+
-- Firefox Browser
-- Geckodriver
+- Scrape posts from YouTube community tabs
+- Download images from posts
+- Collect post comments
+- Proxy support
+- Progress saving
+- Configurable output directory
 
-## 💻 Compatibility
+## Installation
 
-- **Tested on**: Arch Linux
-- **Status**: Experimental
-- **Note**: This tool has only been tested on Arch Linux. While it should work on other Linux distributions, Windows, and MacOS, you may encounter platform-specific issues that haven't been addressed yet. Please report any compatibility issues through the GitHub issue tracker.
-
-## 🛠️ Quick Start
-
-1. **Clone the repository**
+Download and install using pip:
 ```bash
-git clone https://github.com/sadadYes/yt-post-scraper.git
-cd yt-post-scraper
+pip install post-archiver
 ```
 
-2. **Create virtual environment**
+Alternatively, if you want to install from source:
 ```bash
-python -m venv venv
+git clone https://github.com/sadadYes/post-archiver.git
+cd post-archiver
+pip install -e .
 ```
 
-3. **Activate virtual environment**
+## Usage
 
-On Windows:
-```bash
-venv\Scripts\activate
+```
+usage: post-archiver [OPTIONS] url [amount]
+
+YouTube Community Posts Scraper
+
+positional arguments:
+  url                   YouTube channel community URL
+  amount                Amount of posts to get (default: max)
+
+options:
+  -h, --help            show this help message and exit
+  -c, --get-comments    Get comments from posts (default: False)
+  -i, --get-images      Get images from posts (default: False)
+  -d, --download-images
+                        Download images (requires --get-images)
+  -q IMAGE_QUALITY, --image-quality IMAGE_QUALITY
+                        Image quality: sd, hd, or all (default: all)
+  --proxy PROXY         Proxy file or single proxy string
+  -o OUTPUT, --output OUTPUT
+                        Output directory (default: current directory)
+  -v, --verbose         Show basic progress information
+  -t, --trace           Show detailed debug information
+  --version             show program's version number and exit
+
+Proxy format:
+  Single proxy: <scheme>://<username>:<password>@<host>:<port>
+  Proxy file: One proxy per line using the same format
+  Supported schemes: socks5, http, https
+
+Amount:
+  Specify number of posts to scrape (default: max)
+  Use 'max' or any number <= 0 to scrape all posts
+
+Examples:
+  post-archiver https://www.youtube.com/@channel/community
+  post-archiver https://www.youtube.com/@channel/community 50
+  post-archiver -c -i -d -q hd https://www.youtube.com/@channel/community max
+  post-archiver --proxy proxies.txt https://www.youtube.com/@channel/community 100
+  post-archiver --proxy socks5://username:password@host:port https://www.youtube.com/@channel/community
+  post-archiver --proxy http://username:password@host:port https://www.youtube.com/@channel/community
 ```
 
-On Unix or MacOS:
-```bash
-source venv/bin/activate
-```
+## License
 
-4. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-5. **Configure proxy**
-
-You can use either a single proxy or multiple proxies:
-
-For a single proxy, modify `main.py`:
-```python
-# Single proxy setup
-proxy_str = "username:password@host:port"
-proxy_manager = ProxyManager(single_proxy=proxy_str)
-```
-
-For multiple proxies, create `proxies.txt`:
-```text
-username:password@host1:port1
-username:password@host2:port2
-username:password@host3:port3
-```
-Then in `main.py`:
-```python
-# Multiple proxies setup
-proxy_manager = ProxyManager(proxy_file='proxies.txt')
-```
-
-6. **Set target YouTube channel**
-```python
-driver.get("https://www.youtube.com/@channel_name/community")
-```
-
-7. **Run the script**
-```bash
-python main.py
-```
-
-## 📤 Output Example
-
-```json
-{
-  "channel": "channel_name",
-  "channel_icon": "https://yt3.googleusercontent.com/...",
-  "scrape_date": "2024-03-21T15:30:45.123456",
-  "scrape_timestamp": 1711033845,
-  "posts_count": 42,
-  "posts": [
-    {
-      "post_url": "https://www.youtube.com/post/...",
-      "timestamp": "8 days ago",
-      "content": "New Video.",
-      "links": [],
-      "images": [
-        {
-          "standard": "images/post_1_img_0_standard.jpg",
-          "high_res": "images/post_1_img_0_highres.jpg"
-        }
-      ],
-      "like_count": "427",
-      "comment_count": "1",
-      "comments": [
-        {
-          "commenter_icon": "https://yt3.ggpht.com/...",
-          "commenter_name": "@user",
-          "timestamp": "1 days ago",
-          "content": "Great video!!",
-          "like_count": "3"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## 🔧 Advanced Configuration
-
-### Proxy Setup
-The script supports two proxy modes:
-
-1. Single Proxy Mode:
-```python
-proxy_str = "username:password@host:port"
-proxy_manager = ProxyManager(single_proxy=proxy_str)
-```
-
-2. Multiple Proxies Mode:
-```python
-proxy_manager = ProxyManager(proxy_file='proxies.txt')
-```
-
-### Browser Options
-Default configuration uses headless Firefox. Modify options in `create_driver()`:
-```python
-firefox_options = Options()
-firefox_options.add_argument('--headless')  # Remove for visible browser
-```
-
-## ⚠️ Error Handling
-
-The script includes:
-- Automatic browser cleanup
-- Page load wait conditions
-- Proxy authentication handling
-- Proxy rotation on failure
-- Duplicate content detection
-- Progress saving every 5 posts
-- Retry logic for failed requests
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## ⚖️ Disclaimer
-
-This tool is for educational purposes only. Users are responsible for complying with YouTube's terms of service and robots.txt policies.
-
-## 🐛 Troubleshooting
-
-- **Proxy Issues**: 
-  - Verify proxy credentials
-  - Check proxy connection
-  - Try different proxies
-  - Ensure proper proxy format (username:password@host:port)
-- **Selenium Errors**: Ensure Geckodriver is in PATH
-- **No Posts Found**: Check channel URL and wait conditions
-
-## 📮 Support
-
-For issues and feature requests, please use the GitHub issue tracker.
-
-## 📝 TODO
-
-### Planned Features
-- [x] Media Handling
-  - [x] Extract posts containing only images
-  - [x] Download/store post images
-  - [x] Handle posts with mixed content (text + images)
-  - [x] Support for high-resolution images
-
-- [x] Post Metadata
-  - [x] Extract post date and time
-  - [x] Get like count
-  - [x] Get comment count
-
-- [ ] Comments
-  - [x] Scrape all comments for each post
-  - [ ] Handle nested replies
-  - [x] Extract comment metadata
-
-- [x] Data Export
-  - [x] Export data to JSON format
-  - [x] Structured output with post content, media, and metadata
-  - [x] Progress saving and recovery
-
+MIT License
 
