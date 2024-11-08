@@ -9,6 +9,10 @@ from selenium.webdriver.common.keys import Keys
 import json
 from datetime import datetime
 from urllib.parse import urljoin
+import os
+import requests
+from urllib.parse import urlparse
+from pathlib import Path
 
 class ProxyManager:
     def __init__(self, proxy_file=None, single_proxy=None):
@@ -118,12 +122,12 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                 
                 timestamp_elem = thread.select_one('div > div > div > div > span > a')
                 comment_data['timestamp'] = timestamp_elem.get_text().strip() if timestamp_elem else ''
-
+                
                 content_elem = thread.select_one('div > div > ytd-expander > div > yt-attributed-string')
                 comment_data['content'] = content_elem.get_text().strip() if content_elem else ''
                 
                 like_elem = thread.select_one('div > div > ytd-comment-engagement-bar > div > span')
-                comment_data['like_count'] = like_elem.get_text().strip() if like_elem else ''
+                comment_data['like_count'] = like_elem.get_text().strip() if like_elem else '0'
                 
                 comments.append(comment_data)
             
@@ -136,10 +140,67 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                 return []
             time.sleep(5)
 
+def get_high_res_version(img_url):
+    """Convert image URL to high resolution version."""
+    if not img_url:
+        return None
+    base_url = img_url.split('=')[0]
+    return f"{base_url}=s2160"
+
+def create_directories(channel_name, timestamp):
+    """Create necessary directories for output files."""
+    base_dir = Path(f'output/{channel_name}_{timestamp}')
+    base_dir.mkdir(parents=True, exist_ok=True)
+    
+    images_dir = base_dir / 'images'
+    images_dir.mkdir(exist_ok=True)
+    
+    return base_dir, images_dir
+
+def download_image(url, save_path):
+    """Download image from URL and save to specified path."""
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        
+        with open(save_path, 'wb') as f:
+            f.write(response.content)
+        return True
+    except Exception as e:
+        print(f"Error downloading image {url}: {str(e)}")
+        return False
+
+def download_post_images(post_data, images_dir, post_index):
+    """Download all images for a post and update image paths."""
+    downloaded_images = []
+    
+    for img_index, img in enumerate(post_data['images']):
+        filename_base = f"post_{post_index}_img_{img_index}"
+        standard_path = images_dir / f"{filename_base}_standard.jpg"
+        highres_path = images_dir / f"{filename_base}_highres.jpg"
+        
+        if download_image(img['standard'], standard_path):
+            standard_rel_path = str(standard_path.relative_to(images_dir.parent))
+        else:
+            standard_rel_path = img['standard']
+            
+        if download_image(img['high_res'], highres_path):
+            highres_rel_path = str(highres_path.relative_to(images_dir.parent))
+        else:
+            highres_rel_path = img['high_res']
+        
+        downloaded_images.append({
+            'standard': standard_rel_path,
+            'high_res': highres_rel_path
+        })
+    
+    return downloaded_images
+
 def get_all_posts(driver, proxy_manager):
     channel_name = driver.current_url.split('@')[1].split('/')[0]
-    
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    base_dir, images_dir = create_directories(channel_name, timestamp)
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     channel_icon_elem = soup.select_one('ytd-backstage-post-thread-renderer > div > ytd-backstage-post-renderer > div > div > a > yt-img-shadow > img')
@@ -242,7 +303,10 @@ def get_all_posts(driver, proxy_manager):
             img_url = single_image['src']
             if img_url.startswith('//'):
                 img_url = f'https:{img_url}'
-            post_data['images'].append(img_url)
+            post_data['images'].append({
+                'standard': img_url,
+                'high_res': get_high_res_version(img_url)
+            })
         
         multi_images = post_thread.select('div#content-attachment ytd-post-multi-image-renderer img#img')
         for img in multi_images:
@@ -250,12 +314,18 @@ def get_all_posts(driver, proxy_manager):
                 img_url = img['src']
                 if img_url.startswith('//'):
                     img_url = f'https:{img_url}'
-                post_data['images'].append(img_url)
+                post_data['images'].append({
+                    'standard': img_url,
+                    'high_res': get_high_res_version(img_url)
+                })
     
     print(f"\nCollected images, now gathering comments...")
     
     total_posts = len(all_posts_data)
     for index, post_data in enumerate(all_posts_data, 1):
+        if post_data['images']:
+            post_data['images'] = download_post_images(post_data, images_dir, index)
+        
         post_url = post_data['post_url']
         print(f"Getting comments for post {index}/{total_posts}: {post_url}")
         
@@ -268,7 +338,7 @@ def get_all_posts(driver, proxy_manager):
         print(f"Found {len(comments)} comments")
         
         if index % 5 == 0:
-            temp_filename = f'posts_{channel_name}_temp_{timestamp}.json'
+            temp_filename = base_dir / f'posts_{channel_name}_temp_{timestamp}.json'
             with open(temp_filename, 'w', encoding='utf-8') as f:
                 json.dump({
                     'channel': channel_name,
@@ -280,7 +350,7 @@ def get_all_posts(driver, proxy_manager):
                 }, f, ensure_ascii=False, indent=2)
             print(f"Saved progress to {temp_filename}")
     
-    filename = f'posts_{channel_name}_{timestamp}.json'
+    filename = base_dir / f'posts_{channel_name}_{timestamp}.json'
     
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump({

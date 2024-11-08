@@ -108,7 +108,12 @@ python main.py
       "timestamp": "8 days ago",
       "content": "New Video.",
       "links": [],
-      "images": [],
+      "images": [
+        {
+          "standard": "images/post_1_img_0_standard.jpg",
+          "high_res": "images/post_1_img_0_highres.jpg"
+        }
+      ],
       "like_count": "427",
       "comment_count": "1",
       "comments": [
@@ -120,32 +125,9 @@ python main.py
           "like_count": "3"
         }
       ]
-    },
-    {
-      "post_url": "https://www.youtube.com/post/...",
-      "timestamp": "10 days ago",
-      "content": "",
-      "links": [],
-      "images": [
-        "https://yt3.ggpht.com/...."
-      ],
-      "like_count": "523",
-      "comment_count": "32",
-      "comments": []
     }
   ]
 }
-```
-
-## 📦 Dependencies
-
-```
-beautifulsoup4>=4.12.0
-blinker==1.7.0
-selenium-wire>=5.1.0
-selenium>=4.10.0
-packaging>=23.0
-setuptools>=67.0.0
 ```
 
 ## 🔧 Advanced Configuration
@@ -207,10 +189,11 @@ For issues and feature requests, please use the GitHub issue tracker.
 ## 📝 TODO
 
 ### Planned Features
-- [ ] Media Handling
+- [x] Media Handling
   - [x] Extract posts containing only images
-  - [ ] Download/store post images
+  - [x] Download/store post images
   - [x] Handle posts with mixed content (text + images)
+  - [x] Support for high-resolution images
 
 - [x] Post Metadata
   - [x] Extract post date and time
@@ -226,3 +209,5 @@ For issues and feature requests, please use the GitHub issue tracker.
   - [x] Export data to JSON format
   - [x] Structured output with post content, media, and metadata
   - [x] Progress saving and recovery
+
+
