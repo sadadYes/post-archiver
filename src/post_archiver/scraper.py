@@ -176,7 +176,8 @@ def get_channel_icon(driver):
 
 def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False, 
                   download_images=False, image_quality='all', output_dir=None, 
-                  verbose=False, trace=False, max_posts=float('inf')):
+                  verbose=False, trace=False, max_posts=float('inf'), 
+                  member_only=False):
     """Get all posts with specified options."""
     all_posts_data = []
     posts_seen = set()
@@ -196,8 +197,12 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
         create_images_dir=download_images
     )
     
-    # Wait for initial post load
-    driver.wait_for_selector("ytd-backstage-post-thread-renderer")
+    # Wait for initial post load with a more specific selector
+    try:
+        driver.wait_for_selector("ytd-backstage-post-thread-renderer", timeout=10000)
+    except Exception as e:
+        print("No posts found. If trying to access member posts, make sure cookies are valid.")
+        return []
     
     # Initialize last_height before the loop
     last_height = driver.evaluate("document.documentElement.scrollHeight")
@@ -220,6 +225,14 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
             
             post_data = {}
             
+            # Check if post is member-only using a more reliable selector
+            member_badge = soup_thread.select_one('div > ytd-backstage-post-renderer span ytd-sponsors-only-badge-renderer')
+            is_member_only = bool(member_badge)
+            
+            # Skip non-member posts if member_only flag is set
+            if member_only and not is_member_only:
+                continue
+                
             # Get post link and timestamp
             timestamp_elem = soup_thread.select_one('div > ytd-backstage-post-renderer > div > div > div > div > yt-formatted-string > a')
             if timestamp_elem:
@@ -245,9 +258,11 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                     })
                 
                 post_data['content'] = text
+                post_data['member_only'] = is_member_only  # Add member_only status
                 post_data['links'] = found_links
             else:
                 post_data['content'] = None
+                post_data['member_only'] = is_member_only  # Add member_only status
                 post_data['links'] = []
             
             # Initialize images list with both versions
@@ -269,6 +284,7 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                 all_posts_data.append(post_data)
                 if verbose or trace:
                     print(f"Found post: {post_data['timestamp']}")
+                    print(f"Member only: {post_data['member_only']}")
                     print(f"URL: {post_data['post_url']}")
                     print(f"Likes: {post_data['like_count']}")
                     print(f"Comments: {post_data['comment_count']}")

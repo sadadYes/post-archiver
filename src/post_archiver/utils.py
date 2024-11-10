@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 import requests
+import browser_cookie3
 
 def setup_logging(verbose, trace):
     """Configure logging based on verbosity level."""
@@ -89,3 +90,62 @@ def download_image(url, save_path):
     except Exception as e:
         logger.error(f"Error downloading image {url}: {str(e)}")
         return False
+
+def get_browser_cookies(browser_name='chrome', domain='.youtube.com'):
+    """Get cookies from browser for specified domain.
+    
+    Args:
+        browser_name: Browser to get cookies from ('chrome', 'firefox', 'edge', 'opera')
+        domain: Domain to filter cookies for (default: .youtube.com)
+    """
+    logger = logging.getLogger('post_archiver')
+    
+    browser_functions = {
+        'chrome': browser_cookie3.chrome,
+        'firefox': browser_cookie3.firefox,
+        'edge': browser_cookie3.edge,
+        'opera': browser_cookie3.opera,
+    }
+    
+    try:
+        cookie_fn = browser_functions.get(browser_name.lower())
+        if not cookie_fn:
+            raise ValueError(f"Unsupported browser: {browser_name}")
+            
+        logger.info(f"Getting cookies from {browser_name}")
+        cookies = cookie_fn(domain_name=domain)
+        
+        # Convert to Playwright format
+        playwright_cookies = []
+        for cookie in cookies:
+            # Ensure secure is boolean
+            secure = bool(cookie.secure) if isinstance(cookie.secure, (int, bool)) else False
+            
+            # Convert cookie to Playwright format
+            cookie_dict = {
+                'name': cookie.name,
+                'value': cookie.value,
+                'domain': cookie.domain,
+                'path': cookie.path,
+                'secure': secure,
+                'httpOnly': bool(cookie.has_nonstandard_attr('HttpOnly')),
+                'sameSite': 'Lax',  # Default value
+            }
+            
+            # Only add expires if it's a valid number
+            if hasattr(cookie, 'expires') and cookie.expires:
+                try:
+                    expires = int(cookie.expires)
+                    if expires > 0:
+                        cookie_dict['expires'] = expires
+                except (ValueError, TypeError):
+                    pass  # Skip expires if invalid
+            
+            playwright_cookies.append(cookie_dict)
+        
+        logger.info(f"Found {len(playwright_cookies)} cookies for {domain}")
+        return playwright_cookies
+        
+    except Exception as e:
+        logger.error(f"Failed to get cookies from {browser_name}: {str(e)}")
+        return None

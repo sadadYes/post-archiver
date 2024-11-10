@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "post-archiver"
-version = "1.1.1"
+version = "1.2.0"
 description = "A tool to scrape YouTube community posts"
 readme = "README.md"
 authors = [{name = "sadadYes", email = "syaddadpunya@gmail.com"}]
@@ -31,7 +31,8 @@ dependencies = [
     "setuptools>=67.0.0",
     "requests>=2.31.0",
     "urllib3>=2.1.0",
-    "pathlib>=1.0.1"
+    "pathlib>=1.0.1",
+    "browser-cookie3>=0.19.1"
 ]
 requires-python = ">=3.7"
 

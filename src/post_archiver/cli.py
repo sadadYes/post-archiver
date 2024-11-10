@@ -3,13 +3,14 @@ import argparse
 import logging
 from pathlib import Path
 from urllib.parse import urlparse
+from http.cookiejar import MozillaCookieJar
 
 from .proxy import ProxyManager
 from .browser import create_driver
 from .scraper import get_all_posts
-from .utils import setup_logging
+from .utils import setup_logging, get_browser_cookies
 
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 
 def validate_url(url):
     """Validate YouTube community URL."""
@@ -60,6 +61,15 @@ def validate_amount(value):
         if value.lower() == 'max':
             return float('inf')
         raise argparse.ArgumentTypeError("Amount must be a positive integer or 'max'")
+
+def validate_cookie_file(value):
+    """Validate cookie file in Netscape format."""
+    try:
+        cookie_jar = MozillaCookieJar(value)
+        cookie_jar.load(ignore_discard=True, ignore_expires=True)
+        return value
+    except Exception as e:
+        raise argparse.ArgumentTypeError(f"Invalid cookie file: {str(e)}")
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -126,6 +136,18 @@ Examples:
     parser.add_argument('--browser', type=str, choices=['chromium', 'firefox', 'webkit'],
                       default='chromium', help="Browser to use (default: chromium)")
     
+    # Update cookie handling options
+    cookie_group = parser.add_mutually_exclusive_group()
+    cookie_group.add_argument('--cookies', type=validate_cookie_file,
+                          help="Path to cookies file in Netscape format")
+    cookie_group.add_argument('--browser-cookies', type=str,
+                          choices=['chrome', 'firefox', 'edge', 'opera'],
+                          help="Get cookies from browser (requires browser-cookie3)")
+    
+    # Add member-only flag
+    parser.add_argument('--member-only', action='store_true',
+                      help="Only get membership-only posts (requires --cookies or --browser-cookies)")
+    
     args = parser.parse_args()
     
     # Validate dependent arguments
@@ -134,6 +156,10 @@ Examples:
     
     if args.image_quality != 'all' and not args.get_images:
         parser.error("--image-quality requires --get-images")
+    
+    # Update validation
+    if args.member_only and not (args.cookies or args.browser_cookies):
+        parser.error("--member-only requires either --cookies or --browser-cookies")
     
     return args
 
@@ -153,8 +179,21 @@ def main():
     else:
         proxy_manager = None
     
-    # Create initial driver with selected browser
-    driver = create_driver(proxy_manager, browser_type=args.browser)
+    # Get cookies from browser if specified
+    cookies = None
+    if args.browser_cookies:
+        cookies = get_browser_cookies(args.browser_cookies)
+        if not cookies:
+            print("Failed to get cookies from browser. Please check if browser is installed and you have required permissions.")
+            return
+    
+    # Create initial driver with selected browser and cookies
+    driver = create_driver(
+        proxy_manager=proxy_manager,
+        browser_type=args.browser,
+        cookie_file=args.cookies,
+        cookies=cookies  # Add browser cookies
+    )
     
     try:
         driver.goto(args.url)
@@ -170,7 +209,8 @@ def main():
             output_dir=output_dir,
             verbose=args.verbose,
             trace=args.trace,
-            max_posts=args.amount
+            max_posts=args.amount,
+            member_only=args.member_only
         )
         
     finally:

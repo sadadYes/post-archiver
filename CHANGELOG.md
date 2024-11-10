@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0] - 2024-03-10
+
+### Added
+- New --member-only flag to only scrape membership-only posts
+- Member-only status tracking for each post
+- Browser cookie integration with --browser-cookies option
+- Support for getting cookies directly from Chrome, Firefox, Edge, and Opera
+- Improved membership post detection
+- Better cookie handling and validation
+
+### Changed
+- Posts now include 'member_only' field indicating membership status
+- Restructured cookie handling to support both file and browser sources
+- Improved error messages for cookie-related issues
+
+### Fixed
+- Cookie conversion issues between browser and Playwright formats
+- Cookie expiration handling
+- Browser cookie extraction reliability
+
 ## [1.1.1] - 2024-03-10
 
 ### Fixed

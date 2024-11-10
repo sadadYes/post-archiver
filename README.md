@@ -59,6 +59,9 @@ options:
   --browser {chromium,firefox,webkit}
                         Browser to use (default: chromium)
   --version            show program's version number and exit
+  --member-only         Only get membership-only posts (requires --cookies)
+  --browser-cookies {chrome,firefox,edge,opera}
+                        Get cookies from browser (requires browser-cookie3)
 
 Proxy format:
   Single proxy: <scheme>://<username>:<password>@<host>:<port>

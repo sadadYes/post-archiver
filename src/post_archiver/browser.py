@@ -1,13 +1,45 @@
 """Browser management functionality for YouTube Community Scraper"""
 import logging
+from pathlib import Path
+from http.cookiejar import MozillaCookieJar
+from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
-def create_driver(proxy_manager=None, browser_type='chromium'):
-    """Create a new browser instance with the next proxy.
+def load_cookies(cookie_file):
+    """Load cookies from Netscape format file."""
+    logger = logging.getLogger('post_archiver')
+    try:
+        cookie_jar = MozillaCookieJar(cookie_file)
+        cookie_jar.load(ignore_discard=True, ignore_expires=True)
+        
+        # Convert cookies to Playwright format
+        playwright_cookies = []
+        for cookie in cookie_jar:
+            playwright_cookies.append({
+                'name': cookie.name,
+                'value': cookie.value,
+                'domain': cookie.domain,
+                'path': cookie.path,
+                'secure': cookie.secure,
+                'httpOnly': False,  # Not available in Netscape format
+                'sameSite': 'Lax',  # Default value
+                'expires': cookie.expires if cookie.expires else -1
+            })
+        
+        logger.debug(f"Loaded {len(playwright_cookies)} cookies from {cookie_file}")
+        return playwright_cookies
+    except Exception as e:
+        logger.error(f"Failed to load cookies from {cookie_file}: {str(e)}")
+        return None
+
+def create_driver(proxy_manager=None, browser_type='chromium', cookie_file=None, cookies=None):
+    """Create a new browser instance with the next proxy and optional cookies.
     
     Args:
         proxy_manager: Optional ProxyManager instance for proxy support
         browser_type: Browser to use ('chromium', 'firefox', or 'webkit')
+        cookie_file: Optional path to Netscape format cookie file
+        cookies: Optional list of cookies in Playwright format
     """
     logger = logging.getLogger('post_archiver')
     logger.info(f"Initializing {browser_type} browser")
@@ -70,9 +102,20 @@ def create_driver(proxy_manager=None, browser_type='chromium'):
         )
         logger.debug("Browser launched successfully")
         
-        # Create context and page
+        # Create context
         logger.debug("Creating browser context")
         context = browser.new_context()
+        
+        # Handle cookies
+        if cookies:
+            logger.info("Setting cookies from browser")
+            context.add_cookies(cookies)
+        elif cookie_file:
+            cookies = load_cookies(cookie_file)
+            if cookies:
+                logger.info("Setting cookies from file")
+                context.add_cookies(cookies)
+        
         logger.debug("Creating new page")
         page = context.new_page()
         
