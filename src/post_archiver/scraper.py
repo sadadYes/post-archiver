@@ -8,9 +8,7 @@ from urllib.parse import urljoin
 from pathlib import Path
 
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from playwright.sync_api import expect
 
 from .browser import create_driver
 from .utils import create_directories, download_image
@@ -18,6 +16,8 @@ from .utils import create_directories, download_image
 # Move all the functions from your main file here
 def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
     """Get all comments for a specific post with retry logic."""
+    browser_type = getattr(driver, 'browser_type', 'chromium')  # Get browser type or default to chromium
+    
     for attempt in range(max_retries):
         try:
             # Create a new driver with next proxy if this is a retry
@@ -26,26 +26,26 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                     driver.quit()
                 except:
                     pass
-                driver = create_driver(proxy_manager)
+                driver = create_driver(proxy_manager, browser_type=browser_type)
             
-            driver.get(post_url)
-            time.sleep(2)  # Wait for initial load
+            driver.goto(post_url)
+            driver.wait_for_timeout(2000)  # Wait for initial load
             
             comments = []
             
             # Scroll to load all comments
-            last_height = driver.execute_script("return document.documentElement.scrollHeight")
+            last_height = driver.evaluate("document.documentElement.scrollHeight")
             while True:
-                driver.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
-                time.sleep(2)
+                driver.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+                driver.wait_for_timeout(2000)
                 
-                new_height = driver.execute_script("return document.documentElement.scrollHeight")
+                new_height = driver.evaluate("document.documentElement.scrollHeight")
                 if new_height == last_height:
                     break
                 last_height = new_height
             
             # Parse comments
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            soup = BeautifulSoup(driver.content(), 'html.parser')
             comment_threads = soup.find_all('ytd-comment-thread-renderer')
             
             for thread in comment_threads:
@@ -84,7 +84,7 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
             if attempt == max_retries - 1:
                 print(f"Failed to get comments for {post_url} after {max_retries} attempts")
                 return []
-            time.sleep(5)
+            driver.wait_for_timeout(5000)
 
 def get_high_res_version(img_url):
     """Convert image URL to high resolution version."""
@@ -140,26 +140,28 @@ def download_post_images(post_data, images_dir, post_index):
         
         # Download standard version
         if download_image(img['standard'], standard_path):
-            standard_rel_path = str(standard_path.relative_to(images_dir.parent))
+            # Keep the original URL in the JSON
+            standard_url = img['standard']
         else:
-            standard_rel_path = img['standard']
+            standard_url = img['standard']
             
         # Download high-res version
         if download_image(img['high_res'], highres_path):
-            highres_rel_path = str(highres_path.relative_to(images_dir.parent))
+            # Keep the original URL in the JSON
+            highres_url = img['high_res']
         else:
-            highres_rel_path = img['high_res']
+            highres_url = img['high_res']
         
         downloaded_images.append({
-            'standard': standard_rel_path,
-            'high_res': highres_rel_path
+            'standard': standard_url,
+            'high_res': highres_url
         })
     
     return downloaded_images
 
 def get_channel_icon(driver):
     """Get channel icon URL from the page."""
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    soup = BeautifulSoup(driver.content(), 'html.parser')
     channel_icon_elem = soup.select_one('ytd-backstage-post-thread-renderer > div > ytd-backstage-post-renderer > div > div > a > yt-img-shadow > img')
     channel_icon = channel_icon_elem.get('src') if channel_icon_elem else ''
     if channel_icon.startswith('//'):
@@ -173,10 +175,10 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
     all_posts_data = []
     posts_seen = set()
     no_new_posts_count = 0
-    should_break = False  # Add flag to control outer loop
+    should_break = False
     
     # Get channel info
-    channel_name = driver.current_url.split('@')[1].split('/')[0]
+    channel_name = driver.url.split('@')[1].split('/')[0]
     channel_icon = get_channel_icon(driver)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     
@@ -188,23 +190,26 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
         create_images_dir=download_images
     )
     
-    # First pass - scroll and collect basic post data
-    last_height = driver.execute_script("return document.documentElement.scrollHeight")
+    # Wait for initial post load
+    driver.wait_for_selector("ytd-backstage-post-thread-renderer")
+    
+    # Initialize last_height before the loop
+    last_height = driver.evaluate("document.documentElement.scrollHeight")
     
     while True:
         initial_posts_count = len(all_posts_data)
         
         # Scroll down
-        driver.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
-        time.sleep(2)  # Wait for content to load
+        driver.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+        driver.wait_for_timeout(2000)  # Wait for content to load
         
         # Get all post threads
-        post_threads = driver.find_elements(By.CSS_SELECTOR, "ytd-backstage-post-thread-renderer")
+        post_threads = driver.query_selector_all("ytd-backstage-post-thread-renderer")
         
         # Process posts
         for thread in post_threads:
-            # Convert WebElement to BeautifulSoup object
-            thread_html = thread.get_attribute('outerHTML')
+            # Convert element to BeautifulSoup object
+            thread_html = thread.inner_html()
             soup_thread = BeautifulSoup(thread_html, 'html.parser')
             
             post_data = {}
@@ -272,7 +277,7 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
             break
             
         # Check scroll progress
-        new_height = driver.execute_script("return document.documentElement.scrollHeight")
+        new_height = driver.evaluate("document.documentElement.scrollHeight")
         
         # Check if we got any new posts
         if len(all_posts_data) == initial_posts_count:
@@ -297,41 +302,49 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
     # Second pass - collect images
     if get_images:
         print("\nCollecting images...")
-        driver.execute_script("window.scrollTo(0, 0);")
-        time.sleep(2)
+        driver.evaluate("window.scrollTo(0, 0)")
+        driver.wait_for_timeout(2000)
         
         for post_data in all_posts_data:
             # Scroll to the post
             post_url = post_data['post_url']
-            post_elem = driver.find_element(By.CSS_SELECTOR, f'a[href*="{post_url.split("/")[-1]}"]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", post_elem)
-            time.sleep(0.5)  # Small delay to let images load
-            
-            # Get updated HTML for this post
-            post_thread = BeautifulSoup(post_elem.find_element(By.XPATH, "ancestor::ytd-backstage-post-thread-renderer").get_attribute('outerHTML'), 'html.parser')
-            
-            # Get single image
-            single_image = post_thread.select_one('div#content-attachment ytd-backstage-image-renderer img#img')
-            if single_image and single_image.has_attr('src'):
-                img_url = single_image['src']
-                if img_url.startswith('//'):
-                    img_url = f'https:{img_url}'
-                post_data['images'].append({
-                    'standard': img_url,
-                    'high_res': get_high_res_version(img_url)
-                })
-            
-            # Get multiple images
-            multi_images = post_thread.select('div#content-attachment ytd-post-multi-image-renderer img#img')
-            for img in multi_images:
-                if img.has_attr('src'):
-                    img_url = img['src']
-                    if img_url.startswith('//'):
-                        img_url = f'https:{img_url}'
-                    post_data['images'].append({
-                        'standard': img_url,
-                        'high_res': get_high_res_version(img_url)
-                    })
+            post_elem = driver.query_selector(f'a[href*="{post_url.split("/")[-1]}"]')
+            if post_elem:
+                driver.evaluate("element => element.scrollIntoView(true)", post_elem)
+                driver.wait_for_timeout(500)  # Small delay to let images load
+                
+                # Get updated HTML for this post
+                post_thread = BeautifulSoup(
+                    post_elem.evaluate("element => element.closest('ytd-backstage-post-thread-renderer').outerHTML"),
+                    'html.parser'
+                )
+                
+                # Initialize images list
+                post_data['images'] = []
+                
+                # Get multiple images first (if any)
+                multi_images = post_thread.select('div#content-attachment ytd-post-multi-image-renderer img#img')
+                if multi_images:
+                    for img in multi_images:
+                        if img.has_attr('src'):
+                            img_url = img['src']
+                            if img_url.startswith('//'):
+                                img_url = f'https:{img_url}'
+                            post_data['images'].append({
+                                'standard': img_url,
+                                'high_res': get_high_res_version(img_url)
+                            })
+                else:
+                    # Only check for single image if no multiple images were found
+                    single_image = post_thread.select_one('div#content-attachment ytd-backstage-image-renderer img#img')
+                    if single_image and single_image.has_attr('src'):
+                        img_url = single_image['src']
+                        if img_url.startswith('//'):
+                            img_url = f'https:{img_url}'
+                        post_data['images'].append({
+                            'standard': img_url,
+                            'high_res': get_high_res_version(img_url)
+                        })
     
     # Third pass - collect comments and download images
     total_posts = len(all_posts_data)
@@ -379,7 +392,7 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                 print(f"Error saving progress: {str(e)}")
             
             # Add a small delay to ensure messages are printed in order
-            time.sleep(0.1)
+            driver.wait_for_timeout(100)
     
     # Always save final JSON file
     filename = base_dir / f'posts_{channel_name}_{timestamp}.json'

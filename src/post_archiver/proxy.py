@@ -11,8 +11,8 @@ class ProxyManager:
         elif single_proxy:
             self.proxies = [single_proxy]
     
-    def get_seleniumwire_options(self, proxy_info):
-        """Convert proxy string to seleniumwire options."""
+    def get_proxy_config(self, proxy_info):
+        """Convert proxy string to Playwright proxy configuration."""
         # Extract scheme and other parts from proxy URL
         scheme = proxy_info['scheme']
         auth = f"{proxy_info['username']}:{proxy_info['password']}"
@@ -20,10 +20,9 @@ class ProxyManager:
         port = proxy_info['port']
         
         return {
-            'proxy': {
-                'http': f'{scheme}://{auth}@{host}:{port}',
-                'https': f'{scheme}://{auth}@{host}:{port}'
-            }
+            'server': f'{scheme}://{host}:{port}',
+            'username': proxy_info['username'],
+            'password': proxy_info['password']
         }
     
     def get_next_proxy(self):

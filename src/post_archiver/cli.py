@@ -3,16 +3,13 @@ import argparse
 import logging
 from pathlib import Path
 from urllib.parse import urlparse
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from .proxy import ProxyManager
 from .browser import create_driver
 from .scraper import get_all_posts
 from .utils import setup_logging
 
-VERSION = "1.0.0"  # This should match your pyproject.toml version
+VERSION = "1.1.0"
 
 def validate_url(url):
     """Validate YouTube community URL."""
@@ -29,20 +26,20 @@ def validate_proxy(value):
             proxies = [line.strip() for line in f if line.strip()]
             for proxy in proxies:
                 # Check each proxy in file has valid format
-                if not any(proxy.startswith(scheme + '://') for scheme in ['socks5', 'http', 'https']):
+                if not any(proxy.startswith(scheme + '://') for scheme in ['http', 'https']):
                     raise argparse.ArgumentTypeError(
                         f"Invalid proxy format in {value}: {proxy}\n"
                         f"Format should be: <scheme>://<username>:<password>@<host>:<port>\n"
-                        f"Supported schemes: socks5, http, https"
+                        f"Supported schemes: http, https"
                     )
         return value
     else:
         # Validate single proxy string
-        if not any(value.startswith(scheme + '://') for scheme in ['socks5', 'http', 'https']):
+        if not any(value.startswith(scheme + '://') for scheme in ['http', 'https']):
             raise argparse.ArgumentTypeError(
                 f"Invalid proxy format: {value}\n"
                 f"Format should be: <scheme>://<username>:<password>@<host>:<port>\n"
-                f"Supported schemes: socks5, http, https"
+                f"Supported schemes: http, https"
             )
         return value
 
@@ -73,7 +70,8 @@ def parse_args():
 Proxy format:
   Single proxy: <scheme>://<username>:<password>@<host>:<port>
   Proxy file: One proxy per line using the same format
-  Supported schemes: socks5, http, https
+  Supported schemes: http, https
+  Note: SOCKS5 proxies are supported but without authentication
 
 Amount:
   Specify number of posts to scrape (default: max)
@@ -84,8 +82,9 @@ Examples:
   %(prog)s https://www.youtube.com/@channel/community 50
   %(prog)s -c -i -d -q hd https://www.youtube.com/@channel/community max
   %(prog)s --proxy proxies.txt https://www.youtube.com/@channel/community 100
-  %(prog)s --proxy socks5://username:password@host:port https://www.youtube.com/@channel/community
   %(prog)s --proxy http://username:password@host:port https://www.youtube.com/@channel/community
+  %(prog)s --proxy https://username:password@host:port https://www.youtube.com/@channel/community
+  %(prog)s --proxy socks5://host:port https://www.youtube.com/@channel/community
         """
     )
     
@@ -97,7 +96,7 @@ Examples:
                        help="Amount of posts to get (default: max)")
     
     parser.add_argument('-c', '--get-comments', action='store_true',
-                      help="Get comments from posts (default: False)")
+                      help="Get comments from posts (WARNING: This is slow) (default: False)")
     
     parser.add_argument('-i', '--get-images', action='store_true',
                       help="Get images from posts (default: False)")
@@ -122,6 +121,10 @@ Examples:
     
     parser.add_argument('--version', action='version',
                       version=f'%(prog)s {VERSION}')
+    
+    # Add browser selection argument
+    parser.add_argument('--browser', type=str, choices=['chromium', 'firefox', 'webkit'],
+                      default='chromium', help="Browser to use (default: chromium)")
     
     args = parser.parse_args()
     
@@ -150,13 +153,12 @@ def main():
     else:
         proxy_manager = None
     
-    # Create initial driver
-    driver = create_driver(proxy_manager)
+    # Create initial driver with selected browser
+    driver = create_driver(proxy_manager, browser_type=args.browser)
     
     try:
-        driver.get(args.url)
-        wait = WebDriverWait(driver, 10)
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "yt-formatted-string#content-text")))
+        driver.goto(args.url)
+        driver.wait_for_selector("yt-formatted-string#content-text")
         
         get_all_posts(
             driver=driver,
