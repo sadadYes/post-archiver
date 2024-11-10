@@ -9,7 +9,7 @@ from .browser import create_driver
 from .scraper import get_all_posts
 from .utils import setup_logging
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 def validate_url(url):
     """Validate YouTube community URL."""

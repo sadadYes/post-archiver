@@ -128,34 +128,40 @@ def download_image(url, save_path):
         print(f"Error downloading image {url}: {str(e)}")
         return False
 
-def download_post_images(post_data, images_dir, post_index):
+def download_post_images(post_data, images_dir, post_index, image_quality='all'):
     """Download all images for a post and update image paths."""
     downloaded_images = []
     
     for img_index, img in enumerate(post_data['images']):
-        # Create filenames for both versions
+        # Create filenames based on quality setting
         filename_base = f"post_{post_index}_img_{img_index}"
-        standard_path = images_dir / f"{filename_base}_standard.jpg"
-        highres_path = images_dir / f"{filename_base}_highres.jpg"
         
-        # Download standard version
-        if download_image(img['standard'], standard_path):
-            # Keep the original URL in the JSON
-            standard_url = img['standard']
+        if image_quality in ['sd', 'all']:
+            standard_path = images_dir / f"{filename_base}_standard.jpg"
+            if download_image(img['standard'], standard_path):
+                standard_url = img['standard']
+            else:
+                standard_url = img['standard']
         else:
-            standard_url = img['standard']
+            standard_url = None
             
-        # Download high-res version
-        if download_image(img['high_res'], highres_path):
-            # Keep the original URL in the JSON
-            highres_url = img['high_res']
+        if image_quality in ['hd', 'all']:
+            highres_path = images_dir / f"{filename_base}_highres.jpg"
+            if download_image(img['high_res'], highres_path):
+                highres_url = img['high_res']
+            else:
+                highres_url = img['high_res']
         else:
-            highres_url = img['high_res']
+            highres_url = None
         
-        downloaded_images.append({
-            'standard': standard_url,
-            'high_res': highres_url
-        })
+        # Only add URLs for requested quality
+        image_data = {}
+        if standard_url is not None:
+            image_data['standard'] = standard_url
+        if highres_url is not None:
+            image_data['high_res'] = highres_url
+            
+        downloaded_images.append(image_data)
     
     return downloaded_images
 
@@ -330,10 +336,14 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                             img_url = img['src']
                             if img_url.startswith('//'):
                                 img_url = f'https:{img_url}'
-                            post_data['images'].append({
-                                'standard': img_url,
-                                'high_res': get_high_res_version(img_url)
-                            })
+                            
+                            image_data = {}
+                            if image_quality in ['sd', 'all']:
+                                image_data['standard'] = img_url
+                            if image_quality in ['hd', 'all']:
+                                image_data['high_res'] = get_high_res_version(img_url)
+                            
+                            post_data['images'].append(image_data)
                 else:
                     # Only check for single image if no multiple images were found
                     single_image = post_thread.select_one('div#content-attachment ytd-backstage-image-renderer img#img')
@@ -341,17 +351,21 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                         img_url = single_image['src']
                         if img_url.startswith('//'):
                             img_url = f'https:{img_url}'
-                        post_data['images'].append({
-                            'standard': img_url,
-                            'high_res': get_high_res_version(img_url)
-                        })
+                        
+                        image_data = {}
+                        if image_quality in ['sd', 'all']:
+                            image_data['standard'] = img_url
+                        if image_quality in ['hd', 'all']:
+                            image_data['high_res'] = get_high_res_version(img_url)
+                        
+                        post_data['images'].append(image_data)
     
     # Third pass - collect comments and download images
     total_posts = len(all_posts_data)
     for index, post_data in enumerate(all_posts_data, 1):
         # Download images if requested
         if download_images and post_data.get('images') and images_dir:
-            post_data['images'] = download_post_images(post_data, images_dir, index)
+            post_data['images'] = download_post_images(post_data, images_dir, index, image_quality)
         
         # Get comments if requested
         if get_comments:

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1] - 2024-03-10
+
+### Fixed
+- Image quality selection now properly filters images based on the --image-quality flag
+- Standard quality (sd) and high resolution (hd) options now work as intended
+- Fixed duplicate image collection in multi-image posts
+
 ## [1.1.0] - 2024-03-10
 
 ### Added
@@ -34,4 +41,4 @@
 - Firefox/Selenium-based scraping
 - Basic proxy support
 - Image and comment collection
-- Progress saving 
+- Progress saving
