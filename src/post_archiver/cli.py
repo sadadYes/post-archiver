@@ -5,12 +5,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 from http.cookiejar import MozillaCookieJar
 
+from . import __version__
 from .proxy import ProxyManager
 from .browser import create_driver
 from .scraper import get_all_posts
 from .utils import setup_logging, get_browser_cookies
 
-VERSION = "1.2.0"
+VERSION = __version__
 
 def validate_url(url):
     """Validate YouTube community URL."""

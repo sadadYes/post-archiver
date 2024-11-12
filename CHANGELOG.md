@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] - 2024-11-12
+
+### Fixed
+- Improved commenter icon collection reliability
+- Added two-pass approach for comment scraping
+- Better image loading handling for comment avatars
+
 ## [1.2.0] - 2024-03-10
 
 ### Added

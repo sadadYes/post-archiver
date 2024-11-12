@@ -13,7 +13,6 @@ from playwright.sync_api import expect
 from .browser import create_driver
 from .utils import create_directories, download_image
 
-# Move all the functions from your main file here
 def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
     """Get all comments for a specific post with retry logic."""
     browser_type = getattr(driver, 'browser_type', 'chromium')  # Get browser type or default to chromium
@@ -33,7 +32,7 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
             
             comments = []
             
-            # Scroll to load all comments
+            # First pass - scroll and collect basic comment data
             last_height = driver.evaluate("document.documentElement.scrollHeight")
             while True:
                 driver.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
@@ -44,20 +43,12 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                     break
                 last_height = new_height
             
-            # Parse comments
+            # Parse basic comment data
             soup = BeautifulSoup(driver.content(), 'html.parser')
             comment_threads = soup.find_all('ytd-comment-thread-renderer')
             
             for thread in comment_threads:
                 comment_data = {}
-                
-                # Get commenter icon
-                icon_elem = thread.select_one('ytd-comment-view-model > div > div > a > yt-img-shadow > img')
-                if icon_elem and icon_elem.has_attr('src'):
-                    icon_url = icon_elem['src']
-                    if icon_url.startswith('//'):
-                        icon_url = f'https:{icon_url}'
-                    comment_data['commenter_icon'] = icon_url
                 
                 # Get commenter name
                 name_elem = thread.select_one('div > div > div > h3 > a > span')
@@ -76,6 +67,32 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                 comment_data['like_count'] = like_elem.get_text().strip() if like_elem else '0'
                 
                 comments.append(comment_data)
+            
+            # Second pass - scroll back up and collect commenter icons
+            print("Collecting commenter icons...")
+            driver.evaluate("window.scrollTo(0, 0)")
+            driver.wait_for_timeout(2000)  # Wait for images to start loading
+            
+            # Scroll slowly to load all images
+            for i in range(0, last_height, 500):  # Scroll in smaller increments
+                driver.evaluate(f"window.scrollTo(0, {i})")
+                driver.wait_for_timeout(500)  # Small delay between scrolls
+            
+            # Get updated HTML with loaded images
+            soup = BeautifulSoup(driver.content(), 'html.parser')
+            comment_threads = soup.find_all('ytd-comment-thread-renderer')
+            
+            # Update comments with icons
+            for i, thread in enumerate(comment_threads):
+                if i >= len(comments):  # Safety check
+                    break
+                    
+                icon_elem = thread.select_one('ytd-comment-view-model > div > div > a > yt-img-shadow > img')
+                if icon_elem and icon_elem.has_attr('src'):
+                    icon_url = icon_elem['src']
+                    if icon_url.startswith('//'):
+                        icon_url = f'https:{icon_url}'
+                    comments[i]['commenter_icon'] = icon_url
             
             return comments
             
