@@ -110,6 +110,13 @@ def get_high_res_version(img_url):
     base_url = img_url.split('=')[0]
     return f"{base_url}=s2160"
 
+def get_source_res_version(img_url):
+    """Convert image URL to source resolution version."""
+    if not img_url:
+        return None
+    base_url = img_url.split('=')[0]
+    return f"{base_url}=s0"
+
 def create_directories(channel_name, timestamp, base_dir=None, create_images_dir=False):
     """Create necessary directories for output files."""
     try:
@@ -170,6 +177,15 @@ def download_post_images(post_data, images_dir, post_index, image_quality='all')
                 highres_url = img['high_res']
         else:
             highres_url = None
+
+        if image_quality in ['src', 'all']:
+            highres_path = images_dir / f"{filename_base}.jpg"
+            if download_image(img['source'], highres_path):
+                source_url = img['source']
+            else:
+                source_url = img['source']
+        else:
+            source_url = None
         
         # Only add URLs for requested quality
         image_data = {}
@@ -177,6 +193,8 @@ def download_post_images(post_data, images_dir, post_index, image_quality='all')
             image_data['standard'] = standard_url
         if highres_url is not None:
             image_data['high_res'] = highres_url
+        if source_url is not None:
+            image_data['source'] = source_url
             
         downloaded_images.append(image_data)
     
@@ -375,6 +393,8 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                                 image_data['standard'] = img_url
                             if image_quality in ['hd', 'all']:
                                 image_data['high_res'] = get_high_res_version(img_url)
+                            if image_quality in ['src', 'all']:
+                                image_data['source'] = get_source_res_version(img_url)
                             
                             post_data['images'].append(image_data)
                 else:
@@ -390,6 +410,8 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                             image_data['standard'] = img_url
                         if image_quality in ['hd', 'all']:
                             image_data['high_res'] = get_high_res_version(img_url)
+                        if image_quality in ['src', 'all']:
+                            image_data['source'] = get_source_res_version(img_url)
                         
                         post_data['images'].append(image_data)
     

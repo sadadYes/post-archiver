@@ -47,8 +47,8 @@ def validate_proxy(value):
 
 def validate_image_quality(value):
     """Validate image quality option."""
-    if value.lower() not in ['sd', 'hd', 'all']:
-        raise argparse.ArgumentTypeError("Image quality must be 'sd', 'hd', or 'all'")
+    if value.lower() not in ['src', 'sd', 'hd', 'all']:
+        raise argparse.ArgumentTypeError("Image quality must be 'src', 'sd', 'hd', or 'all'")
     return value.lower()
 
 def validate_amount(value):
@@ -116,7 +116,7 @@ Examples:
                       help="Download images (requires --get-images)")
     
     parser.add_argument('-q', '--image-quality', type=validate_image_quality,
-                      default='all', help="Image quality: sd, hd, or all (default: all)")
+                      default='all', help="Image quality: src, sd, hd, or all (default: all)")
     
     parser.add_argument('--proxy', type=validate_proxy,
                       help="Proxy file or single proxy string")
