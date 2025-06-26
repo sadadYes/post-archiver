@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.2] - 2025-06-26
+
+### Removed
+- Removed redundant HD (high resolution) image quality option
+- HD quality has been replaced by the superior source quality option
+- Updated CLI validation to only accept 'src', 'sd', and 'all' quality options
+- Cleaned up all HD-related code from scraper and download functions
+
+### Changed
+- Source quality ('src') is now the highest resolution option available
+- Updated documentation and examples to reflect HD removal
+
 ## [1.2.1] - 2024-11-12
 
 ### Fixed

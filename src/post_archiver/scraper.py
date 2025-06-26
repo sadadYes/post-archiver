@@ -103,13 +103,6 @@ def get_post_comments(post_url, driver, proxy_manager, max_retries=3):
                 return []
             driver.wait_for_timeout(5000)
 
-def get_high_res_version(img_url):
-    """Convert image URL to high resolution version."""
-    if not img_url:
-        return None
-    base_url = img_url.split('=')[0]
-    return f"{base_url}=s2160"
-
 def get_source_res_version(img_url):
     """Convert image URL to source resolution version."""
     if not img_url:
@@ -168,19 +161,10 @@ def download_post_images(post_data, images_dir, post_index, image_quality='all')
                 standard_url = img['standard']
         else:
             standard_url = None
-            
-        if image_quality in ['hd', 'all']:
-            highres_path = images_dir / f"{filename_base}_highres.jpg"
-            if download_image(img['high_res'], highres_path):
-                highres_url = img['high_res']
-            else:
-                highres_url = img['high_res']
-        else:
-            highres_url = None
 
         if image_quality in ['src', 'all']:
-            highres_path = images_dir / f"{filename_base}.jpg"
-            if download_image(img['source'], highres_path):
+            source_path = images_dir / f"{filename_base}.jpg"
+            if download_image(img['source'], source_path):
                 source_url = img['source']
             else:
                 source_url = img['source']
@@ -191,8 +175,6 @@ def download_post_images(post_data, images_dir, post_index, image_quality='all')
         image_data = {}
         if standard_url is not None:
             image_data['standard'] = standard_url
-        if highres_url is not None:
-            image_data['high_res'] = highres_url
         if source_url is not None:
             image_data['source'] = source_url
             
@@ -391,8 +373,6 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                             image_data = {}
                             if image_quality in ['sd', 'all']:
                                 image_data['standard'] = img_url
-                            if image_quality in ['hd', 'all']:
-                                image_data['high_res'] = get_high_res_version(img_url)
                             if image_quality in ['src', 'all']:
                                 image_data['source'] = get_source_res_version(img_url)
                             
@@ -408,8 +388,6 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
                         image_data = {}
                         if image_quality in ['sd', 'all']:
                             image_data['standard'] = img_url
-                        if image_quality in ['hd', 'all']:
-                            image_data['high_res'] = get_high_res_version(img_url)
                         if image_quality in ['src', 'all']:
                             image_data['source'] = get_source_res_version(img_url)
                         

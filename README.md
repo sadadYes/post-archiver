@@ -50,7 +50,7 @@ options:
   -d, --download-images
                         Download images (requires --get-images)
   -q IMAGE_QUALITY, --image-quality IMAGE_QUALITY
-                        Image quality: sd, hd, or all (default: all)
+                        Image quality: src, sd, or all (default: all)
   --proxy PROXY         Proxy file or single proxy string
   -o OUTPUT, --output OUTPUT
                         Output directory (default: current directory)
@@ -76,7 +76,7 @@ Amount:
 Examples:
   post-archiver https://www.youtube.com/@channel/community
   post-archiver https://www.youtube.com/@channel/community 50
-  post-archiver -c -i -d -q hd https://www.youtube.com/@channel/community max
+  post-archiver -c -i -d -q src https://www.youtube.com/@channel/community max
   post-archiver --browser firefox https://www.youtube.com/@channel/community
   post-archiver --proxy proxies.txt https://www.youtube.com/@channel/community 100
   post-archiver --proxy http://username:password@host:port https://www.youtube.com/@channel/community

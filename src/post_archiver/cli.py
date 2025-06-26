@@ -47,8 +47,8 @@ def validate_proxy(value):
 
 def validate_image_quality(value):
     """Validate image quality option."""
-    if value.lower() not in ['src', 'sd', 'hd', 'all']:
-        raise argparse.ArgumentTypeError("Image quality must be 'src', 'sd', 'hd', or 'all'")
+    if value.lower() not in ['src', 'sd', 'all']:
+        raise argparse.ArgumentTypeError("Image quality must be 'src', 'sd', or 'all'")
     return value.lower()
 
 def validate_amount(value):
@@ -91,7 +91,7 @@ Amount:
 Examples:
   %(prog)s https://www.youtube.com/@channel/community
   %(prog)s https://www.youtube.com/@channel/community 50
-  %(prog)s -c -i -d -q hd https://www.youtube.com/@channel/community max
+  %(prog)s -c -i -d -q src https://www.youtube.com/@channel/community max
   %(prog)s --proxy proxies.txt https://www.youtube.com/@channel/community 100
   %(prog)s --proxy http://username:password@host:port https://www.youtube.com/@channel/community
   %(prog)s --proxy https://username:password@host:port https://www.youtube.com/@channel/community
@@ -116,7 +116,7 @@ Examples:
                       help="Download images (requires --get-images)")
     
     parser.add_argument('-q', '--image-quality', type=validate_image_quality,
-                      default='all', help="Image quality: src, sd, hd, or all (default: all)")
+                      default='all', help="Image quality: src, sd, or all (default: all)")
     
     parser.add_argument('--proxy', type=validate_proxy,
                       help="Proxy file or single proxy string")
