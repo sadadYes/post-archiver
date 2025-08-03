@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.3] - 2025-08-03
+
+### Added
+- Added support for simplified channel name input (e.g., just "channel" instead of full URL)
+- Automatic URL construction from channel names to `https://www.youtube.com/@{channel}/posts`
+
+### Fixed
+- Added automatic endpoint migration from deprecated `/community` to `/posts`
+- Added warning message when old `/community` endpoint is used
+
+### Changed
+- Updated comment count selector
+- Updated examples and documentation to use the new `/posts` endpoint
+- URL validation now accepts both `/posts` and `/community` endpoints
+- Enhanced URL input flexibility to accept channel names or full URLs
+
 ## [1.2.2] - 2025-06-26
 
 ### Removed

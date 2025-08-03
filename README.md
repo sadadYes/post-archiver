@@ -74,14 +74,14 @@ Amount:
   Use 'max' or any number <= 0 to scrape all posts
 
 Examples:
-  post-archiver https://www.youtube.com/@channel/community
-  post-archiver https://www.youtube.com/@channel/community 50
-  post-archiver -c -i -d -q src https://www.youtube.com/@channel/community max
-  post-archiver --browser firefox https://www.youtube.com/@channel/community
-  post-archiver --proxy proxies.txt https://www.youtube.com/@channel/community 100
-  post-archiver --proxy http://username:password@host:port https://www.youtube.com/@channel/community
-  post-archiver --proxy https://username:password@host:port https://www.youtube.com/@channel/community
-  post-archiver --proxy socks5://host:port https://www.youtube.com/@channel/community
+  post-archiver https://www.youtube.com/@channel/posts
+  post-archiver https://www.youtube.com/@channel/posts 50
+  post-archiver -c -i -d -q src https://www.youtube.com/@channel/posts max
+  post-archiver --browser firefox https://www.youtube.com/@channel/posts
+  post-archiver --proxy proxies.txt https://www.youtube.com/@channel/posts 100
+  post-archiver --proxy http://username:password@host:port https://www.youtube.com/@channel/posts
+  post-archiver --proxy https://username:password@host:port https://www.youtube.com/@channel/posts
+  post-archiver --proxy socks5://host:port https://www.youtube.com/@channel/posts
 ```
 
 ## Browser Support

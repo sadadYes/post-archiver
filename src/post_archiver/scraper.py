@@ -290,7 +290,7 @@ def get_all_posts(driver, proxy_manager, get_comments=False, get_images=False,
             post_data['like_count'] = like_elem.get_text().strip() if like_elem else '0'
             
             # Get comment count
-            comment_elem = soup_thread.select_one('ytd-comment-action-buttons-renderer > div > div > ytd-button-renderer > yt-button-shape > a > div > span')
+            comment_elem = soup_thread.select_one('ytd-comment-action-buttons-renderer > div > div > ytd-button-renderer > yt-button-shape > a > div:nth-child(2) > span')
             comment_count = comment_elem.get_text() if comment_elem else '0'
             post_data['comment_count'] = comment_count.split()[0]
             

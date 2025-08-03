@@ -15,10 +15,31 @@ VERSION = __version__
 
 def validate_url(url):
     """Validate YouTube community URL."""
+    # Check if input is just a channel name (no URL scheme)
+    if not url.startswith(('http://', 'https://')):
+        channel_name = url.strip('@')  # Remove @ if present
+        constructed_url = f"https://www.youtube.com/@{channel_name}/posts"
+        return constructed_url
+    
     parsed = urlparse(url)
-    if not parsed.netloc == 'www.youtube.com' or not '/community' in parsed.path:
-        raise argparse.ArgumentTypeError(f"Invalid YouTube community URL: {url}")
-    return url
+    if not parsed.netloc == 'www.youtube.com':
+        raise argparse.ArgumentTypeError(f"Invalid YouTube URL: {url}")
+    
+    # Check for old endpoint
+    if '/community' in parsed.path:
+        # Convert old endpoint to new endpoint
+        new_url = url.replace('/community', '/posts')
+        print(f"WARNING: The /community endpoint is deprecated. Auto-correcting to: {new_url}")
+        return new_url
+    
+    # Check for new endpoint
+    if '/posts' in parsed.path:
+        return url
+    
+    # If neither endpoint is found, it's invalid
+    raise argparse.ArgumentTypeError(
+        f"Invalid YouTube community URL: {url}\n"
+    )
 
 def validate_proxy(value):
     """Validate proxy string or file."""
@@ -89,18 +110,18 @@ Amount:
   Use 'max' or any number <= 0 to scrape all posts
 
 Examples:
-  %(prog)s https://www.youtube.com/@channel/community
-  %(prog)s https://www.youtube.com/@channel/community 50
-  %(prog)s -c -i -d -q src https://www.youtube.com/@channel/community max
-  %(prog)s --proxy proxies.txt https://www.youtube.com/@channel/community 100
-  %(prog)s --proxy http://username:password@host:port https://www.youtube.com/@channel/community
-  %(prog)s --proxy https://username:password@host:port https://www.youtube.com/@channel/community
-  %(prog)s --proxy socks5://host:port https://www.youtube.com/@channel/community
+  %(prog)s https://www.youtube.com/@channel/posts
+  %(prog)s https://www.youtube.com/@channel/posts 50
+  %(prog)s -c -i -d -q src https://www.youtube.com/@channel/posts max
+  %(prog)s --proxy proxies.txt https://www.youtube.com/@channel/posts 100
+  %(prog)s --proxy http://username:password@host:port https://www.youtube.com/@channel/posts
+  %(prog)s --proxy https://username:password@host:port https://www.youtube.com/@channel/posts
+  %(prog)s --proxy socks5://host:port https://www.youtube.com/@channel/posts
         """
     )
     
     parser.add_argument('url', type=validate_url, 
-                       help="YouTube channel community URL")
+                       help="YouTube channel posts URL or channel name (e.g., 'channel' or 'https://www.youtube.com/@channel/posts')")
     
     parser.add_argument('amount', type=validate_amount, nargs='?', 
                        default=float('inf'),
