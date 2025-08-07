@@ -1,3 +1,6 @@
+# DEPRECATION WARNING! This project is no longer maintained!
+## This project have been superseded by [post-archiver-improved](https://github.com/sadadYes/post-archiver-improved)
+
 # YouTube Community Scraper
 
 A Python tool to scrape posts from YouTube community tabs.
